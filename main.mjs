@@ -63,7 +63,7 @@ try {
     await setTimeout(3000)
 
     try {
-        const turnstileWrapper = await page.waitForSelector('.cf-turnstile iframe', { timeout: 5000 })
+        const turnstileWrapper = await page.waitForSelector('.cf-turnstile iframe', { timeout: 15000 })
         if (turnstileWrapper) {
             const box = await turnstileWrapper.boundingBox()
             if (box) {
