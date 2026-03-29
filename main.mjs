@@ -40,14 +40,29 @@ try {
         }
     } catch (e) {
     }
-    
+
     await page.locator('a[href^="/xapanel/xvps/server/detail?id="]').click()
     await page.locator('text=更新する').click()
     await page.locator('text=引き続き無料VPSの利用を継続する').click()
     await page.waitForNavigation({ waitUntil: 'networkidle2' })
+    
     const body = await page.$eval('img[src^="data:"]', img => img.src)
     const code = await fetch('https://captcha-120546510085.asia-northeast1.run.app', { method: 'POST', body }).then(r => r.text())
     await page.locator('[placeholder="上の画像の数字を入力"]').fill(code)
+
+    try {
+        const turnstileBox = await page.waitForSelector('.cf-turnstile', { timeout: 5000 })
+        if (turnstileBox) {
+            await page.click('.cf-turnstile')
+            await page.waitForFunction(() => {
+                const input = document.querySelector('[name="cf-turnstile-response"]')
+                return input && input.value.length > 0
+            }, { timeout: 30000 })
+            await setTimeout(1000)
+        }
+    } catch (e) {
+    }
+
     await page.locator('text=無料VPSの利用を継続する').click()
 } catch (e) {
     console.error(e)
