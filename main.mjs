@@ -48,54 +48,25 @@ try {
     await page.locator('text=更新する').click()
     await page.locator('text=引き続き無料VPSの利用を継続する').click()
     await page.waitForNavigation({ waitUntil: 'networkidle2' })
-
+    
     const body = await page.$eval('img[src^="data:"]', img => img.src)
-    let code = await fetch('https://captcha-120546510085.asia-northeast1.run.app', { method: 'POST', body }).then(r => r.text())
-    code = code.trim()
+    const code = await fetch('https://captcha-120546510085.asia-northeast1.run.app', { method: 'POST', body }).then(r => r.text())
     await page.locator('[placeholder="上の画像の数字を入力"]').fill(code)
 
-    console.log("CAPTCHA inputs done. Starting Turnstile process.")
-    await setTimeout(2000)
-
     try {
-        console.log("Waiting for Turnstile iframe...")
-        const turnstileIframe = await page.waitForSelector('.cf-turnstile iframe', { timeout: 30000 })
-        
-        if (turnstileIframe) {
-            console.log("Iframe detected. Waiting for render...")
-            await setTimeout(3000)
-
-            const box = await turnstileIframe.boundingBox()
-            if (box) {
-                const clickX = box.x + box.width / 2
-                const clickY = box.y + box.height / 2
-                console.log(`Clicking exact coordinates: X:${clickX}, Y:${clickY}`)
-                
-                await page.mouse.move(clickX, clickY, { steps: 10 })
-                await page.mouse.click(clickX, clickY)
-            } else {
-                console.log("BoundingBox not found, using fallback click.")
-                await page.click('.cf-turnstile')
-            }
-
-            console.log("Click executed. Waiting for token generation...")
+        const turnstileBox = await page.waitForSelector('.cf-turnstile', { timeout: 5000 })
+        if (turnstileBox) {
+            await page.click('.cf-turnstile')
             await page.waitForFunction(() => {
                 const input = document.querySelector('[name="cf-turnstile-response"]')
                 return input && input.value.length > 0
-            }, { timeout: 40000 })
-            
-            console.log("Turnstile token generated successfully.")
-            await setTimeout(3000)
+            }, { timeout: 30000 })
+            await setTimeout(1000)
         }
     } catch (e) {
-        console.log("Turnstile process error/timeout:", e.message)
     }
 
-    console.log("Clicking final continue button.")
     await page.locator('text=無料VPSの利用を継続する').click()
-    await setTimeout(5000)
-    console.log("All processes finished.")
-
 } catch (e) {
     console.error(e)
 } finally {
