@@ -50,23 +50,29 @@ try {
     await page.waitForNavigation({ waitUntil: 'networkidle2' })
 
     const body = await page.$eval('img[src^="data:"]', img => img.src)
-    const code = await fetch('https://captcha-120546510085.asia-northeast1.run.app', { method: 'POST', body }).then(r => r.text())
+    let code = await fetch('https://captcha-120546510085.asia-northeast1.run.app', { method: 'POST', body }).then(r => r.text())
+    code = code.trim()
     await page.locator('[placeholder="上の画像の数字を入力"]').fill(code)
 
+    await setTimeout(2000)
+
     try {
-        const turnstileBox = await page.waitForSelector('.cf-turnstile', { timeout: 5000 })
+        const turnstileBox = await page.waitForSelector('.cf-turnstile iframe', { timeout: 15000 })
         if (turnstileBox) {
+            await setTimeout(2000)
             await page.click('.cf-turnstile')
             await page.waitForFunction(() => {
                 const input = document.querySelector('[name="cf-turnstile-response"]')
                 return input && input.value.length > 0
             }, { timeout: 30000 })
-            await setTimeout(1000)
+            await setTimeout(3000)
         }
     } catch (e) {
+        console.log(e.message)
     }
 
     await page.locator('text=無料VPSの利用を継続する').click()
+    await setTimeout(5000)
 } catch (e) {
     console.error(e)
 } finally {
