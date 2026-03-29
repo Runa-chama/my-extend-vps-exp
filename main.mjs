@@ -35,25 +35,22 @@ try {
     await page.locator('text=ログインする').click()
     await page.waitForNavigation({ waitUntil: 'networkidle2' })
 
-    // ポップアップ対策（念のため残す）
     try {
-        await setTimeout(2000) 
-        await page.mouse.click(10, 10)
-        await setTimeout(1000)
-    } catch (e) {}
+        const closeBtn = await page.waitForSelector('button.modal__close', { timeout: 3000 })
+        if (closeBtn) {
+            await closeBtn.click()
+            await setTimeout(1000)
+        }
+    } catch (e) {
+    }
 
     await page.locator('a[href^="/xapanel/xvps/server/detail?id="]').click()
     await page.locator('text=更新する').click()
     await page.locator('text=引き続き無料VPSの利用を継続する').click()
     await page.waitForNavigation({ waitUntil: 'networkidle2' })
-    
-    // 1. 画像認証の取得とクリーンアップ処理
+
     const body = await page.$eval('img[src^="data:"]', img => img.src)
-    let code = await fetch('https://captcha-120546510085.asia-northeast1.run.app', { method: 'POST', body }).then(r => r.text())
-    
-    code = code.trim()
-    console.log(`[デバッグ] APIが認識したCAPTCHAの数字: ${code}`)
-    
+    const code = await fetch('https://captcha-120546510085.asia-northeast1.run.app', { method: 'POST', body }).then(r => r.text())
     await page.locator('[placeholder="上の画像の数字を入力"]').fill(code)
 
     try {
@@ -64,17 +61,12 @@ try {
                 const input = document.querySelector('[name="cf-turnstile-response"]')
                 return input && input.value.length > 0
             }, { timeout: 30000 })
-            
-            await setTimeout(3000)
+            await setTimeout(1000)
         }
     } catch (e) {
-        console.log("[デバッグ] Turnstileの処理をスキップ、またはタイムアウトしました。")
     }
 
     await page.locator('text=無料VPSの利用を継続する').click()
-    
-    await setTimeout(5000)
-
 } catch (e) {
     console.error(e)
 } finally {
