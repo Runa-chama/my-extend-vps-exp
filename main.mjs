@@ -60,19 +60,21 @@ try {
     const code = await fetch('https://captcha-120546510085.asia-northeast1.run.app', { method: 'POST', body }).then(r => r.text())
     await page.locator('[placeholder="上の画像の数字を入力"]').fill(code)
 
-console.log("[Info] 数字入力後、30秒待機します...")
-    await setTimeout(30000) 
+console.log("[Info] 数字入力後、40秒待機します...")
+    await setTimeout(40000)
 
     try {
-        console.log("[Info] Turnstileのiframeを探します...")
-        const turnstileIframe = await page.waitForSelector('iframe[src*="challenges.cloudflare.com"]', { visible: true, timeout: 5000 })
+        console.log("[Info] Turnstileの外枠を探します...")
+        // iframeの属性への依存をやめ、確実に出現する外枠のクラスを指定
+        const turnstileWrapper = await page.waitForSelector('.cf-turnstile', { visible: true, timeout: 10000 })
         
-        if (turnstileIframe) {
-            const box = await turnstileIframe.boundingBox()
+        if (turnstileWrapper) {
+            const box = await turnstileWrapper.boundingBox()
             
             if (box) {
-                console.log(`[Debug] iframe BoundingBox - X: ${box.x}, Y: ${box.y}, Width: ${box.width}, Height: ${box.height}`)
+                console.log(`[Debug] Wrapper BoundingBox - X: ${box.x}, Y: ${box.y}, Width: ${box.width}, Height: ${box.height}`)
                 
+                // 外枠の左端から30px、高さの中央を狙う
                 const clickX = box.x + 30
                 const clickY = box.y + (box.height / 2)
                 
@@ -85,10 +87,10 @@ console.log("[Info] 数字入力後、30秒待機します...")
                 await page.mouse.up()
                 console.log("[Info] チェックボックス位置をクリックしました")
             } else {
-                console.log("[Error] iframeのboundingBoxが取得できませんでした(null)")
+                console.log("[Error] 外枠のboundingBoxが取得できませんでした")
             }
         } else {
-            console.log("[Error] iframe要素が見つかりませんでした")
+            console.log("[Error] 外枠要素が見つかりませんでした")
         }
 
         console.log("[Info] トークンの取得を待機しています...")
@@ -103,7 +105,8 @@ console.log("[Info] 数字入力後、30秒待機します...")
         console.log(`[Error] Turnstile処理中に例外発生: ${e.message}`)
     }
 
-    await setTimeout(2000)
+    await setTimeout(10000)
+    
     await page.locator('text=無料VPSの利用を継続する').click()
 
 } catch (e) {
