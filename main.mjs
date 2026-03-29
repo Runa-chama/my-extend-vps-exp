@@ -60,14 +60,14 @@ try {
     const code = await fetch('https://captcha-120546510085.asia-northeast1.run.app', { method: 'POST', body }).then(r => r.text())
     await page.locator('[placeholder="上の画像の数字を入力"]').fill(code)
 
-await setTimeout(3000)
+console.log("[Info] 数字入力後、30秒待機します...")
+    await setTimeout(30000) 
 
     try {
-        const turnstileIframe = await page.waitForSelector('iframe[src*="challenges.cloudflare.com"]', { visible: true, timeout: 30000 })
+        console.log("[Info] Turnstileのiframeを探します...")
+        const turnstileIframe = await page.waitForSelector('iframe[src*="challenges.cloudflare.com"]', { visible: true, timeout: 5000 })
         
         if (turnstileIframe) {
-            await setTimeout(3000)
-
             const box = await turnstileIframe.boundingBox()
             
             if (box) {
@@ -83,6 +83,7 @@ await setTimeout(3000)
                 await page.mouse.down()
                 await setTimeout(100)
                 await page.mouse.up()
+                console.log("[Info] チェックボックス位置をクリックしました")
             } else {
                 console.log("[Error] iframeのboundingBoxが取得できませんでした(null)")
             }
@@ -90,6 +91,7 @@ await setTimeout(3000)
             console.log("[Error] iframe要素が見つかりませんでした")
         }
 
+        console.log("[Info] トークンの取得を待機しています...")
         await page.waitForFunction(() => {
             const input = document.querySelector('[name="cf-turnstile-response"]')
             return input && input.value.length > 0
