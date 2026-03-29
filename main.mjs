@@ -65,7 +65,6 @@ console.log("[Info] 数字入力後、40秒待機します...")
 
     try {
         console.log("[Info] Turnstileの外枠を探します...")
-        // iframeの属性への依存をやめ、確実に出現する外枠のクラスを指定
         const turnstileWrapper = await page.waitForSelector('.cf-turnstile', { visible: true, timeout: 10000 })
         
         if (turnstileWrapper) {
@@ -74,18 +73,32 @@ console.log("[Info] 数字入力後、40秒待機します...")
             if (box) {
                 console.log(`[Debug] Wrapper BoundingBox - X: ${box.x}, Y: ${box.y}, Width: ${box.width}, Height: ${box.height}`)
                 
-                // 外枠の左端から30px、高さの中央を狙う
-                const clickX = box.x + 30
+                // 1. 外枠の中心を計算
+                const wrapperCenterX = box.x + (box.width / 2)
+                
+                // 2. iframe（幅282px）の左端を計算
+                const iframeWidth = 282
+                const iframeLeftX = wrapperCenterX - (iframeWidth / 2)
+                
+                // 3. チェックボックスの正確な座標（左端から約30px、高さは中央）
+                const clickX = iframeLeftX + 30
                 const clickY = box.y + (box.height / 2)
                 
-                console.log(`[Debug] Click Target - X: ${clickX}, Y: ${clickY}`)
+                console.log(`[Debug] iframe左端: ${iframeLeftX}, Target X: ${clickX}, Target Y: ${clickY}`)
+
+                // 人間らしい少しのブレ（±2px程度）を加える
+                const finalX = clickX + (Math.random() * 4 - 2)
+                const finalY = clickY + (Math.random() * 4 - 2)
+
+                await page.mouse.move(finalX, finalY, { steps: 12 })
+                await setTimeout(400 + Math.random() * 200) // マウスを乗せてから少し待つ
                 
-                await page.mouse.move(clickX, clickY, { steps: 15 })
-                await setTimeout(500)
+                // 人間らしいクリック
                 await page.mouse.down()
-                await setTimeout(100)
+                await setTimeout(80 + Math.random() * 50)  // 押し込み時間
                 await page.mouse.up()
-                console.log("[Info] チェックボックス位置をクリックしました")
+                
+                console.log("[Info] 計算されたチェックボックス位置をクリックしました")
             } else {
                 console.log("[Error] 外枠のboundingBoxが取得できませんでした")
             }
@@ -105,7 +118,7 @@ console.log("[Info] 数字入力後、40秒待機します...")
         console.log(`[Error] Turnstile処理中に例外発生: ${e.message}`)
     }
 
-    await setTimeout(10000)
+    await setTimeout(5000)
     
     await page.locator('text=無料VPSの利用を継続する').click()
 
