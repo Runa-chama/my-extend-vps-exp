@@ -60,26 +60,34 @@ try {
     const code = await fetch('https://captcha-120546510085.asia-northeast1.run.app', { method: 'POST', body }).then(r => r.text())
     await page.locator('[placeholder="上の画像の数字を入力"]').fill(code)
 
-    await setTimeout(3000)
+await setTimeout(3000)
 
     try {
-        const turnstileWrapper = await page.waitForSelector('.cf-turnstile iframe', { timeout: 15000 })
-        if (turnstileWrapper) {
-            const box = await turnstileWrapper.boundingBox()
+        const turnstileIframe = await page.waitForSelector('iframe[src*="challenges.cloudflare.com"]', { visible: true, timeout: 30000 })
+        
+        if (turnstileIframe) {
+            await setTimeout(3000)
+
+            const box = await turnstileIframe.boundingBox()
+            
             if (box) {
+                console.log(`[Debug] iframe BoundingBox - X: ${box.x}, Y: ${box.y}, Width: ${box.width}, Height: ${box.height}`)
+                
                 const clickX = box.x + 30
                 const clickY = box.y + (box.height / 2)
+                
+                console.log(`[Debug] Click Target - X: ${clickX}, Y: ${clickY}`)
                 
                 await page.mouse.move(clickX, clickY, { steps: 15 })
                 await setTimeout(500)
                 await page.mouse.down()
                 await setTimeout(100)
                 await page.mouse.up()
+            } else {
+                console.log("[Error] iframeのboundingBoxが取得できませんでした(null)")
             }
         } else {
-            await page.mouse.move(400, 500, { steps: 15 })
-            await setTimeout(500)
-            await page.mouse.click(400, 500)
+            console.log("[Error] iframe要素が見つかりませんでした")
         }
 
         await page.waitForFunction(() => {
@@ -87,10 +95,13 @@ try {
             return input && input.value.length > 0
         }, { timeout: 20000 })
         
+        console.log("[Success] Turnstileのトークンを取得しました")
+        
     } catch (e) {
+        console.log(`[Error] Turnstile処理中に例外発生: ${e.message}`)
     }
 
-    await setTimeout(1000)
+    await setTimeout(2000)
     await page.locator('text=無料VPSの利用を継続する').click()
 
 } catch (e) {
