@@ -5,7 +5,7 @@ import { setTimeout } from 'node:timers/promises'
 puppeteer.use(StealthPlugin())
 
 const args = [
-    '--no-sandbox', 
+    '--no-sandbox',
     '--disable-setuid-sandbox',
     '--disable-blink-features=AutomationControlled'
 ]
@@ -60,31 +60,39 @@ try {
     const code = await fetch('https://captcha-120546510085.asia-northeast1.run.app', { method: 'POST', body }).then(r => r.text())
     await page.locator('[placeholder="上の画像の数字を入力"]').fill(code)
 
-    try {
-        await page.waitForSelector('iframe[src*="challenges.cloudflare.com"]', { timeout: 10000 })
-        const frames = page.frames()
-        const turnstileFrame = frames.find(f => f.url().includes('challenges.cloudflare.com'))
+    await setTimeout(3000)
 
-        if (turnstileFrame) {
-            const checkbox = await turnstileFrame.waitForSelector('input[type="checkbox"]', { timeout: 5000 })
-            if (checkbox) {
-                const box = await checkbox.boundingBox()
-                if (box) {
-                    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
-                }
+    try {
+        const turnstileWrapper = await page.waitForSelector('.cf-turnstile iframe', { timeout: 5000 })
+        if (turnstileWrapper) {
+            const box = await turnstileWrapper.boundingBox()
+            if (box) {
+                const clickX = box.x + 30
+                const clickY = box.y + (box.height / 2)
+                
+                await page.mouse.move(clickX, clickY, { steps: 15 })
+                await setTimeout(500)
+                await page.mouse.down()
+                await setTimeout(100)
+                await page.mouse.up()
             }
+        } else {
+            await page.mouse.move(400, 500, { steps: 15 })
+            await setTimeout(500)
+            await page.mouse.click(400, 500)
         }
 
         await page.waitForFunction(() => {
             const input = document.querySelector('[name="cf-turnstile-response"]')
             return input && input.value.length > 0
-        }, { timeout: 30000 })
-        await setTimeout(1000)
+        }, { timeout: 20000 })
         
     } catch (e) {
     }
 
+    await setTimeout(1000)
     await page.locator('text=無料VPSの利用を継続する').click()
+
 } catch (e) {
     console.error(e)
 } finally {
